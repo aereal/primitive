@@ -91,7 +91,7 @@ func SaveGIFImageMagick(path string, frames []image.Image, delay, lastDelay int)
 	}
 	for i, im := range frames {
 		path := filepath.Join(dir, fmt.Sprintf("%06d.png", i))
-		SavePNG(path, im)
+		_ = SavePNG(path, im)
 	}
 	args := []string{
 		"-loop", "0",
