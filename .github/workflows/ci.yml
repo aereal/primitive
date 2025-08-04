@@ -19,12 +19,12 @@ jobs:
             go.sum
       - run: go mod download
       - name: build
-        run: go build -o ./primitive ./
+        run: go build -o ./a ./
       - name: test
         run: go test -race ./...
       - name: generate image
         run: |
-          ./primitive -i ./examples/monalisa.png -o ./out.svg -n 50
+          ./a -i ./examples/monalisa.png -o ./out.svg -n 50
       - name: preview generated image
         run: |
           echo '# from monalisa.png' >> "$GITHUB_STEP_SUMMARY"
