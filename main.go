@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fogleman/primitive/internal/logger"
 	"github.com/fogleman/primitive/primitive"
 	"github.com/nfnt/resize"
 )
@@ -116,13 +118,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	logLevel := slog.LevelWarn
 	// set log level
 	if V {
-		primitive.LogLevel = 1
+		logLevel = slog.LevelInfo
 	}
 	if VV {
-		primitive.LogLevel = 2
+		logLevel = slog.LevelDebug
 	}
+	logger.SetupLogger(os.Stderr, logLevel)
 
 	// determine worker count
 	if Workers < 1 {
@@ -130,7 +134,7 @@ func main() {
 	}
 
 	// read input image
-	primitive.Log(1, "reading %s\n", Input)
+	slog.Debug("reading input", slog.String("input", Input))
 	input, err := primitive.LoadImage(Input)
 	check(err)
 
@@ -150,12 +154,15 @@ func main() {
 
 	// run algorithm
 	model := primitive.NewModel(input, bg, OutputSize, Workers)
-	primitive.Log(1, "%d: t=%.3f, score=%.6f\n", 0, 0.0, model.Score)
+	slog.Info("run algorithm",
+		slog.Int("frame", 0),
+		slog.Float64("t", 0.0),
+		slog.Float64("score", model.Score),
+	)
 	start := time.Now()
 	frame := 0
 	for j, config := range Configs {
-		primitive.Log(1, "count=%d, mode=%d, alpha=%d, repeat=%d\n",
-			config.Count, config.Mode, config.Alpha, config.Repeat)
+		slog.Info("", slog.Int("count", config.Count), slog.Int("mode", config.Mode), slog.Int("alpha", config.Alpha), slog.Int("repeat", config.Repeat))
 
 		for i := 0; i < config.Count; i++ {
 			frame++
@@ -165,7 +172,13 @@ func main() {
 			n := model.Step(primitive.ShapeType(config.Mode), config.Alpha, config.Repeat)
 			nps := primitive.NumberString(float64(n) / time.Since(t).Seconds())
 			elapsed := time.Since(start).Seconds()
-			primitive.Log(1, "%d: t=%.3f, score=%.6f, n=%d, n/s=%s\n", frame, elapsed, model.Score, n, nps)
+			slog.Info("",
+				slog.Int("frame", frame),
+				slog.Float64("t", elapsed),
+				slog.Float64("score", model.Score),
+				slog.Int("n", n),
+				slog.String("nps", nps),
+			)
 
 			// write output image(s)
 			for _, output := range Outputs {
@@ -182,7 +195,7 @@ func main() {
 					if percent {
 						path = fmt.Sprintf(output, frame)
 					}
-					primitive.Log(1, "writing %s\n", path)
+					slog.Info("writing", slog.String("output", path))
 					switch ext {
 					default:
 						check(fmt.Errorf("unrecognized file extension: %s", ext))

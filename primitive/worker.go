@@ -2,6 +2,7 @@ package primitive
 
 import (
 	"image"
+	"log/slog"
 	"math/rand"
 	"time"
 
@@ -61,7 +62,7 @@ func (worker *Worker) BestHillClimbState(t ShapeType, a, n, age, m int) *State {
 		before := state.Energy()
 		state = HillClimb(state, age).(*State)
 		energy := state.Energy()
-		vv("%dx random: %.6f -> %dx hill climb: %.6f\n", n, before, age, energy)
+		slog.Debug("random", slog.Int("random", n), slog.Float64("before", before), slog.Int("age", age), slog.Float64("energy", energy))
 		if i == 0 || energy < bestEnergy {
 			bestEnergy = energy
 			bestState = state
