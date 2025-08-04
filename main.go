@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -124,9 +123,6 @@ func main() {
 	if VV {
 		primitive.LogLevel = 2
 	}
-
-	// seed random number generator
-	rand.Seed(time.Now().UTC().UnixNano())
 
 	// determine worker count
 	if Workers < 1 {
