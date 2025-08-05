@@ -156,7 +156,11 @@ func doRun(ctx context.Context) error {
 	if Background == "" {
 		bg = primitive.MakeColor(primitive.AverageImageColor(input))
 	} else {
-		bg = primitive.MakeHexColor(Background)
+		var err error
+		bg, err = primitive.MakeHexColor(Background)
+		if err != nil {
+			return err
+		}
 	}
 
 	// run algorithm

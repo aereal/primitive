@@ -102,7 +102,9 @@ func SaveGIFImageMagick(ctx context.Context, path string, frames []image.Image, 
 		return err
 	}
 	for i, im := range frames {
-		_ = SavePNG(filepath.Join(dir, fmt.Sprintf("%06d.png", i)), im) //nolint:errcheck
+		if err := SavePNG(filepath.Join(dir, fmt.Sprintf("%06d.png", i)), im); err != nil {
+			return err
+		}
 	}
 	args := []string{
 		"-loop", "0",
