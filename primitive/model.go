@@ -14,18 +14,18 @@ type Model struct {
 	Target     *image.RGBA
 	Current    *image.RGBA
 	Context    *gg.Context
+	Background *Color
 	Shapes     []Shape
 	Colors     []Color
 	Scores     []float64
 	Workers    []*Worker
-	Background Color
 	Sw         int
 	Sh         int
 	Scale      float64
 	Score      float64
 }
 
-func NewModel(target image.Image, background Color, size, numWorkers int) *Model {
+func NewModel(target image.Image, background *Color, size, numWorkers int) *Model {
 	w := target.Bounds().Size().X
 	h := target.Bounds().Size().Y
 	aspect := float64(w) / float64(h)

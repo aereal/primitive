@@ -152,7 +152,7 @@ func doRun(ctx context.Context) error {
 	}
 
 	// determine background color
-	var bg primitive.Color
+	var bg *primitive.Color
 	if Background == "" {
 		bg = primitive.MakeColor(primitive.AverageImageColor(input))
 	} else {
