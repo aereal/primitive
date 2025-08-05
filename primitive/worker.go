@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"context"
 	"image"
 	"log/slog"
 	"math/rand"
@@ -59,7 +60,7 @@ func (worker *Worker) Energy(shape Shape, alpha int) float64 {
 	return differencePartial(worker.Target, worker.Current, worker.Buffer, worker.Score, lines)
 }
 
-func (worker *Worker) BestHillClimbState(t ShapeType, a, n, age, m int) *State {
+func (worker *Worker) BestHillClimbState(ctx context.Context, t ShapeType, a, n, age, m int) *State {
 	var bestEnergy float64
 	var bestState *State
 	for i := 0; i < m; i++ {
@@ -67,7 +68,7 @@ func (worker *Worker) BestHillClimbState(t ShapeType, a, n, age, m int) *State {
 		before := state.Energy()
 		state, _ = HillClimb(state, age).(*State) //nolint:errcheck
 		energy := state.Energy()
-		slog.Debug("random", slog.Int("random", n), slog.Float64("before", before), slog.Int("age", age), slog.Float64("energy", energy)) //nolint:noctx
+		slog.DebugContext(ctx, "random", slog.Int("random", n), slog.Float64("before", before), slog.Int("age", age), slog.Float64("energy", energy))
 		if i == 0 || energy < bestEnergy {
 			bestEnergy = energy
 			bestState = state

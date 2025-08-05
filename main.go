@@ -176,7 +176,7 @@ func doRun(ctx context.Context) error {
 
 			// find optimal shape and add it to the model
 			t := time.Now()
-			n := model.Step(primitive.ShapeType(config.Mode), config.Alpha, config.Repeat)
+			n := model.Step(ctx, primitive.ShapeType(config.Mode), config.Alpha, config.Repeat)
 			nps := primitive.NumberString(float64(n) / time.Since(t).Seconds())
 			elapsed := time.Since(start).Seconds()
 			slog.InfoContext(ctx, "",
