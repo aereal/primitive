@@ -1,6 +1,7 @@
 package primitive
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"image/color"
@@ -64,7 +65,19 @@ func SaveJPG(path string, im image.Image, quality int) error {
 }
 
 func SaveGIF(path string, frames []image.Image, delay, lastDelay int) error {
-	g := gif.GIF{}
+	var bgIdx byte
+	g := gif.GIF{
+		Image:           nil,
+		Delay:           nil,
+		LoopCount:       0,
+		Disposal:        nil,
+		BackgroundIndex: bgIdx,
+		Config: image.Config{
+			ColorModel: nil,
+			Width:      0,
+			Height:     0,
+		},
+	}
 	for i, src := range frames {
 		dst := image.NewPaletted(src.Bounds(), palette.Plan9)
 		draw.Draw(dst, dst.Rect, src, image.ZP, draw.Src)
@@ -83,14 +96,13 @@ func SaveGIF(path string, frames []image.Image, delay, lastDelay int) error {
 	return gif.EncodeAll(file, &g)
 }
 
-func SaveGIFImageMagick(path string, frames []image.Image, delay, lastDelay int) error {
+func SaveGIFImageMagick(ctx context.Context, path string, frames []image.Image, delay, lastDelay int) error {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return err
 	}
 	for i, im := range frames {
-		path := filepath.Join(dir, fmt.Sprintf("%06d.png", i))
-		_ = SavePNG(path, im)
+		_ = SavePNG(filepath.Join(dir, fmt.Sprintf("%06d.png", i)), im) //nolint:errcheck
 	}
 	args := []string{
 		"-loop", "0",
@@ -100,7 +112,7 @@ func SaveGIFImageMagick(path string, frames []image.Image, delay, lastDelay int)
 		filepath.Join(dir, fmt.Sprintf("%06d.png", len(frames)-1)),
 		path,
 	}
-	cmd := exec.Command("convert", args...)
+	cmd := exec.CommandContext(ctx, "convert", args...)
 	if err := cmd.Run(); err != nil {
 		return err
 	}

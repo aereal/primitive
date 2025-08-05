@@ -10,14 +10,15 @@ import (
 )
 
 type Worker struct {
-	W, H       int
 	Target     *image.RGBA
 	Current    *image.RGBA
 	Buffer     *image.RGBA
 	Rasterizer *raster.Rasterizer
-	Lines      []Scanline
 	Heatmap    *Heatmap
 	Rnd        *rand.Rand
+	Lines      []Scanline
+	W          int
+	H          int
 	Score      float64
 	Counter    int
 }
@@ -25,15 +26,19 @@ type Worker struct {
 func NewWorker(target *image.RGBA) *Worker {
 	w := target.Bounds().Size().X
 	h := target.Bounds().Size().Y
-	worker := Worker{}
-	worker.W = w
-	worker.H = h
-	worker.Target = target
-	worker.Buffer = image.NewRGBA(target.Bounds())
-	worker.Rasterizer = raster.NewRasterizer(w, h)
-	worker.Lines = make([]Scanline, 0, 4096) // TODO: based on height
-	worker.Heatmap = NewHeatmap(w, h)
-	worker.Rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
+	worker := Worker{
+		W:          w,
+		H:          h,
+		Target:     target,
+		Buffer:     image.NewRGBA(target.Bounds()),
+		Rasterizer: raster.NewRasterizer(w, h),
+		Lines:      make([]Scanline, 0, 4096), // TODO: based on height
+		Heatmap:    NewHeatmap(w, h),
+		Rnd:        rand.New(rand.NewSource(time.Now().UnixNano())),
+		Current:    nil,
+		Score:      0,
+		Counter:    0,
+	}
 	return &worker
 }
 
@@ -60,9 +65,9 @@ func (worker *Worker) BestHillClimbState(t ShapeType, a, n, age, m int) *State {
 	for i := 0; i < m; i++ {
 		state := worker.BestRandomState(t, a, n)
 		before := state.Energy()
-		state = HillClimb(state, age).(*State)
+		state, _ = HillClimb(state, age).(*State) //nolint:errcheck
 		energy := state.Energy()
-		slog.Debug("random", slog.Int("random", n), slog.Float64("before", before), slog.Int("age", age), slog.Float64("energy", energy))
+		slog.Debug("random", slog.Int("random", n), slog.Float64("before", before), slog.Int("age", age), slog.Float64("energy", energy)) //nolint:noctx
 		if i == 0 || energy < bestEnergy {
 			bestEnergy = energy
 			bestState = state

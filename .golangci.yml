@@ -1,0 +1,118 @@
+version: "2"
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: false
+output:
+  show-stats: false
+  sort-order:
+    - file
+    - linter
+    - severity
+  formats:
+    text:
+      path: stdout
+      colors: false
+formatters: {}
+run:
+  timeout: 15s
+  tests: true
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+linters:
+  default: none
+  enable:
+    - asasalint
+    - bidichk
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - durationcheck
+    # - err113
+    - errcheck
+    - errname
+    - exhaustive
+    - exhaustruct
+    - forbidigo
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - govet
+    - iface
+    - ineffassign
+    - nilnesserr
+    - noctx
+    - paralleltest
+    - prealloc
+    - sloglint
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+  exclusions:
+    rules:
+      - path: 'main[.]go$'
+        text: 'do not exit from inside of the program'
+  settings:
+    errcheck:
+      check-blank: true
+      exclude-functions:
+        - '(*os.File).Close'
+    exhaustive:
+      check:
+        - map
+        - switch
+      default-signifies-exhaustive: true
+    exhaustruct:
+      include:
+        - '.*'
+      exclude: []
+    forbidigo:
+      exclude-godoc-examples: true
+      analyze-types: true
+      forbid:
+        - pattern: '(^log[.]Fatal(f|ln)?$|^os[.]Exit)'
+          msg: do not exit from inside of the program
+    govet:
+      disable-all: true
+      enable:
+        - appends
+        - assign
+        - atomic
+        - atomicalign
+        - bools
+        - buildtag
+        - composites
+        - copylocks
+        - defers
+        - directive
+        - errorsas
+        - fieldalignment
+        - ifaceassert
+        - loopclosure
+        - lostcancel
+        - nilfunc
+        - nilness
+        - printf
+        - shadow
+        - shift
+        - slog
+        - sortslice
+        - stdmethods
+        - stdversion
+        - stringintconv
+        - structtag
+        - testinggoroutine
+        - tests
+        - timeformat
+        - unmarshal
+        - unreachable
+        - unusedresult
+        - unusedwrite
+        - waitgroup
