@@ -10,9 +10,10 @@ import (
 
 type Polygon struct {
 	Worker *Worker
+	X      []float64
+	Y      []float64
 	Order  int
 	Convex bool
-	X, Y   []float64
 }
 
 func NewRandomPolygon(worker *Worker, order int, convex bool) *Polygon {
@@ -25,7 +26,7 @@ func NewRandomPolygon(worker *Worker, order int, convex bool) *Polygon {
 		x[i] = x[0] + rnd.Float64()*40 - 20
 		y[i] = y[0] + rnd.Float64()*40 - 20
 	}
-	p := &Polygon{worker, order, convex, x, y}
+	p := &Polygon{Worker: worker, Order: order, Convex: convex, X: x, Y: y}
 	p.Mutate()
 	return p
 }

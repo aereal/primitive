@@ -8,7 +8,8 @@ import (
 
 func SetupLogger(out io.Writer, logLevel slog.Level) {
 	opts := &slog.HandlerOptions{
-		Level: logLevel,
+		AddSource: false,
+		Level:     logLevel,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			switch a.Value.Kind() {
 			case slog.KindFloat64:

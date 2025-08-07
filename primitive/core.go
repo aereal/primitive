@@ -25,7 +25,7 @@ func computeColor(target, current *image.RGBA, lines []Scanline, alpha int) Colo
 		}
 	}
 	if count == 0 {
-		return Color{}
+		return Color{R: 0, G: 0, B: 0, A: 0}
 	}
 	r := clampInt(int(rsum/count)>>8, 0, 255)
 	g := clampInt(int(gsum/count)>>8, 0, 255)

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -57,7 +58,10 @@ func (i *shapeConfigArray) String() string {
 }
 
 func (i *shapeConfigArray) Set(value string) error {
-	n, _ := strconv.ParseInt(value, 0, 0)
+	n, err := strconv.ParseInt(value, 0, 0)
+	if err != nil {
+		return err
+	}
 	*i = append(*i, shapeConfig{int(n), Mode, Alpha, Repeat})
 	return nil
 }
@@ -78,29 +82,32 @@ func init() {
 	flag.BoolVar(&VV, "vv", false, "very verbose")
 }
 
-func errorMessage(message string) bool {
-	fmt.Fprintln(os.Stderr, message)
-	return false
-}
-
-func check(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func main() {
-	// parse and validate arguments
+	os.Exit(run())
+}
+
+func run() int {
+	ctx := context.Background()
+	if err := doRun(ctx); err != nil {
+		if hasExitCode, ok := err.(interface{ ExitCode() int }); ok {
+			return hasExitCode.ExitCode()
+		}
+		return 1
+	}
+	return 0
+}
+
+func doRun(ctx context.Context) error {
 	flag.Parse()
-	ok := true
+	var err error
 	if Input == "" {
-		ok = errorMessage("ERROR: input argument required")
+		err = errors.Join(err, errors.New("ERROR: input argument required"))
 	}
 	if len(Outputs) == 0 {
-		ok = errorMessage("ERROR: output argument required")
+		err = errors.Join(err, errors.New("ERROR: output argument required"))
 	}
 	if len(Configs) == 0 {
-		ok = errorMessage("ERROR: number argument required")
+		err = errors.Join(err, errors.New("ERROR: number argument required"))
 	}
 	if len(Configs) == 1 {
 		Configs[0].Mode = Mode
@@ -109,13 +116,11 @@ func main() {
 	}
 	for _, config := range Configs {
 		if config.Count < 1 {
-			ok = errorMessage("ERROR: number argument must be > 0")
+			err = errors.Join(err, errors.New("ERROR: number argument must be > 0"))
 		}
 	}
-	if !ok {
-		fmt.Println("Usage: primitive [OPTIONS] -i input -o output -n count")
-		flag.PrintDefaults()
-		os.Exit(1)
+	if err != nil {
+		return err
 	}
 
 	logLevel := slog.LevelWarn
@@ -134,9 +139,11 @@ func main() {
 	}
 
 	// read input image
-	slog.Debug("reading input", slog.String("input", Input))
+	slog.DebugContext(ctx, "reading input", slog.String("input", Input))
 	input, err := primitive.LoadImage(Input)
-	check(err)
+	if err != nil {
+		return err
+	}
 
 	// scale down input image if needed
 	size := uint(InputSize)
@@ -145,16 +152,20 @@ func main() {
 	}
 
 	// determine background color
-	var bg primitive.Color
+	var bg *primitive.Color
 	if Background == "" {
 		bg = primitive.MakeColor(primitive.AverageImageColor(input))
 	} else {
-		bg = primitive.MakeHexColor(Background)
+		var err error
+		bg, err = primitive.MakeHexColor(Background)
+		if err != nil {
+			return err
+		}
 	}
 
 	// run algorithm
 	model := primitive.NewModel(input, bg, OutputSize, Workers)
-	slog.Info("run algorithm",
+	slog.InfoContext(ctx, "run algorithm",
 		slog.Int("frame", 0),
 		slog.Float64("t", 0.0),
 		slog.Float64("score", model.Score),
@@ -162,17 +173,17 @@ func main() {
 	start := time.Now()
 	frame := 0
 	for j, config := range Configs {
-		slog.Info("", slog.Int("count", config.Count), slog.Int("mode", config.Mode), slog.Int("alpha", config.Alpha), slog.Int("repeat", config.Repeat))
+		slog.InfoContext(ctx, "", slog.Int("count", config.Count), slog.Int("mode", config.Mode), slog.Int("alpha", config.Alpha), slog.Int("repeat", config.Repeat))
 
 		for i := 0; i < config.Count; i++ {
 			frame++
 
 			// find optimal shape and add it to the model
 			t := time.Now()
-			n := model.Step(primitive.ShapeType(config.Mode), config.Alpha, config.Repeat)
+			n := model.Step(ctx, primitive.ShapeType(config.Mode), config.Alpha, config.Repeat)
 			nps := primitive.NumberString(float64(n) / time.Since(t).Seconds())
 			elapsed := time.Since(start).Seconds()
-			slog.Info("",
+			slog.InfoContext(ctx, "",
 				slog.Int("frame", frame),
 				slog.Float64("t", elapsed),
 				slog.Float64("score", model.Score),
@@ -195,22 +206,23 @@ func main() {
 					if percent {
 						path = fmt.Sprintf(output, frame)
 					}
-					slog.Info("writing", slog.String("output", path))
+					slog.InfoContext(ctx, "writing", slog.String("output", path))
 					switch ext {
 					default:
-						check(fmt.Errorf("unrecognized file extension: %s", ext))
+						return fmt.Errorf("unrecognized file extension: %s", ext)
 					case ".png":
-						check(primitive.SavePNG(path, model.Context.Image()))
+						return primitive.SavePNG(path, model.Context.Image())
 					case ".jpg", ".jpeg":
-						check(primitive.SaveJPG(path, model.Context.Image(), 95))
+						return primitive.SaveJPG(path, model.Context.Image(), 95)
 					case ".svg":
-						check(primitive.SaveFile(path, model.SVG()))
+						return primitive.SaveFile(path, model.SVG())
 					case ".gif":
 						frames := model.Frames(0.001)
-						check(primitive.SaveGIFImageMagick(path, frames, 50, 250))
+						return primitive.SaveGIFImageMagick(ctx, path, frames, 50, 250)
 					}
 				}
 			}
 		}
 	}
+	return nil
 }

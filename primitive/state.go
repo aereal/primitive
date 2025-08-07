@@ -36,7 +36,7 @@ func (state *State) DoMove() interface{} {
 }
 
 func (state *State) UndoMove(undo interface{}) {
-	oldState := undo.(*State)
+	oldState, _ := undo.(*State)
 	state.Shape = oldState.Shape
 	state.Alpha = oldState.Alpha
 	state.Score = oldState.Score

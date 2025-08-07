@@ -7,13 +7,14 @@ import (
 )
 
 type Heatmap struct {
-	W, H  int
 	Count []uint64
+	W     int
+	H     int
 }
 
 func NewHeatmap(w, h int) *Heatmap {
 	count := make([]uint64, w*h)
-	return &Heatmap{w, h, count}
+	return &Heatmap{W: w, H: h, Count: count}
 }
 
 func (h *Heatmap) Clear() {
